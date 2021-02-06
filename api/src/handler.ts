@@ -4,6 +4,7 @@ const headers = new Headers({
   "Content-Type": "application/json",
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "*",
+  "Access-Control-Allow-Methods": "PUT, GET, OPTIONS",
 });
 
 export async function handleRequest(request: Request): Promise<Response> {
@@ -35,7 +36,7 @@ async function load(path: string) {
 
 async function save(path: string, request: Request) {
   const key = path.substr(1);
-  const text = await request.text();
+  const text = await request.json();
   await KV.put(key, text);
-  return new Response(JSON.stringify(text), { headers });
+  return new Response(text, { headers });
 }
