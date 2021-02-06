@@ -1,0 +1,10 @@
+name = "madlibs"
+type = "webpack"
+account_id = "1690cafe72c93692fe6ce15a0ca37fc5"
+workers_dev = true
+route = ""
+zone_id = ""
+webpack_config = "webpack.config.js"
+kv-namespaces = [
+    {binding = "KV", id = "cdab34ce195a45f38bad584102d95043", preview_id = "a347bfb39dc84a3d90078acd528a3264" }
+]
