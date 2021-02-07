@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "parcel src/index.html"
+    "start": "parcel src/index.html",
+    "test": "elm-test"
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +13,7 @@
     "elm": "^0.19.1-5",
     "elm-hot": "^1.1.6",
     "node-elm-compiler": "^5.0.5",
-    "parcel-bundler": "^1.12.4"
+    "parcel-bundler": "^1.12.4",
+    "elm-test": "0.19.1-revision6"
   }
 }
