@@ -1,11 +1,13 @@
 module Pages.Edit exposing (Model, Msg, init, toSession, update, view)
 
 import Api
+import Browser.Navigation
 import Element as E
 import Element.Input as Input
 import Html as H
 import MADLib exposing (MADLib)
 import RemoteData exposing (WebData)
+import Route
 import Session exposing (Session)
 
 
@@ -20,6 +22,7 @@ type alias Model =
 type Msg
     = TextUpdated String
     | SaveButtonClicked
+    | PlayButtonClicked
     | OnLoadComplete (WebData String)
     | OnSaveComplete (WebData ())
 
@@ -59,10 +62,16 @@ view model =
                 , spellcheck = True
                 }
             , preview model.madlib
-            , Input.button []
-                { onPress = Just SaveButtonClicked
-                , label = E.text "Save"
-                }
+            , E.row [ E.spacing 10 ]
+                [ Input.button []
+                    { onPress = Just SaveButtonClicked
+                    , label = E.text "Save"
+                    }
+                , Input.button []
+                    { onPress = Just PlayButtonClicked
+                    , label = E.text "Play"
+                    }
+                ]
             ]
         )
     ]
@@ -82,6 +91,10 @@ preview madlibResult =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        navKey =
+            model.session |> Session.navKey
+    in
     case msg of
         TextUpdated text ->
             ( { model
@@ -113,3 +126,6 @@ update msg model =
 
         OnSaveComplete _ ->
             ( model, Cmd.none )
+
+        PlayButtonClicked ->
+            ( model, Browser.Navigation.pushUrl navKey (Route.toUrl (Route.Play model.key)) )

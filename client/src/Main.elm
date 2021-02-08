@@ -7,7 +7,7 @@ import Html exposing (Html)
 import Pages.Edit as EditPage
 import RemoteData exposing (WebData)
 import Route exposing (Route)
-import Session exposing (Session)
+import Session exposing (Session, navKey)
 import Url
 
 
@@ -18,24 +18,14 @@ main =
         , view = view
         , update = update
         , subscriptions = subscriptions
-        , onUrlChange = onUrlChange
-        , onUrlRequest = onUrlRequest
+        , onUrlChange = UrlChanged
+        , onUrlRequest = UrlRequested
         }
 
 
 subscriptions : Model -> Sub Msg
-subscriptions arg1 =
+subscriptions _ =
     Sub.none
-
-
-onUrlChange : Url.Url -> Msg
-onUrlChange arg1 =
-    NoOp
-
-
-onUrlRequest : Browser.UrlRequest -> Msg
-onUrlRequest arg1 =
-    NoOp
 
 
 type Model
@@ -45,9 +35,10 @@ type Model
 
 
 type Msg
-    = NoOp
-    | GetNewKeyComplete (WebData String)
+    = GetNewKeyComplete (WebData String)
     | EditPageMsg EditPage.Msg
+    | UrlChanged Url.Url
+    | UrlRequested Browser.UrlRequest
 
 
 init : () -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
@@ -120,11 +111,11 @@ update msg model =
     let
         session =
             toSession model
+
+        navKey =
+            Session.navKey session
     in
     case ( msg, model ) of
-        ( NoOp, _ ) ->
-            ( model, Cmd.none )
-
         ( GetNewKeyComplete (RemoteData.Success newKey), _ ) ->
             let
                 ( pageModel, pageCmd ) =
@@ -149,3 +140,14 @@ update msg model =
 
         ( EditPageMsg _, _ ) ->
             ( model, Cmd.none )
+
+        ( UrlChanged url, _ ) ->
+            changeRouteTo (Route.fromUrl url) model
+
+        ( UrlRequested request, _ ) ->
+            case request of
+                Browser.Internal url ->
+                    ( model, Navigation.pushUrl navKey (Url.toString url) )
+
+                Browser.External href ->
+                    ( model, Navigation.load href )

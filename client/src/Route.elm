@@ -31,7 +31,7 @@ toUrl route =
             ""
 
         Edit key ->
-            "edit/" ++ key
+            "/edit/" ++ key
 
         Play key ->
-            "play/" ++ key
+            "/play/" ++ key
