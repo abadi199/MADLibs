@@ -26,10 +26,39 @@ parser =
     Parser.loop [] parserHelper
 
 
+clean : String -> String
+clean text =
+    [ "]", "[" ]
+        |> List.foldl (\reject acc -> String.replace reject "" acc) text
+        |> String.trim
+
+
 parserHelper : MADLib -> Parser.Parser (Parser.Step MADLib MADLib)
 parserHelper madlib =
     Parser.oneOf
-        [ Parser.succeed (\token -> Parser.Loop (token :: madlib))
+        [ Parser.succeed
+            (\token ->
+                case token of
+                    Text "" ->
+                        madlib |> List.reverse |> Parser.Done
+
+                    Text text ->
+                        let
+                            cleanText =
+                                clean text
+                        in
+                        if cleanText == "" then
+                            Parser.Loop madlib
+
+                        else
+                            Parser.Loop (Text cleanText :: madlib)
+
+                    Input label ->
+                        Parser.Loop (Input (clean label) :: madlib)
+
+                    _ ->
+                        Parser.Loop (token :: madlib)
+            )
             |= tokenParser
         , Parser.succeed ()
             |> Parser.map (\_ -> Parser.Done (List.reverse madlib))
@@ -39,18 +68,31 @@ parserHelper madlib =
 tokenParser : Parser.Parser Token
 tokenParser =
     Parser.oneOf
-        [ textTokenParser
-        , inputTokenParser
+        [ inputTokenParser
+        , textTokenParser
         ]
 
 
 inputTokenParser : Parser.Parser Token
 inputTokenParser =
-    Parser.succeed ()
+    Parser.succeed identity
         |. Parser.symbol "["
-        |. Parser.chompUntil "]"
-        |> getChompedString
-        |> Parser.map (String.dropLeft 1 >> Input)
+        |= Parser.oneOf
+            [ closingBracketFound
+            , noClosingBracket
+            ]
+
+
+closingBracketFound : Parser.Parser Token
+closingBracketFound =
+    Parser.chompUntil "]" |> Parser.getChompedString |> Parser.map Input
+
+
+noClosingBracket : Parser.Parser Token
+noClosingBracket =
+    Parser.succeed (\text -> "[" ++ text |> Text)
+        |= (Parser.chompUntilEndOr "\n" |> Parser.getChompedString)
+        |. Parser.end
 
 
 textTokenParser : Parser.Parser Token
