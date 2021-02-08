@@ -107,11 +107,7 @@ textTokenParser =
 
 toHtml : List Parser.DeadEnd -> H.Html msg
 toHtml deadEnds =
-    let
-        _ =
-            Debug.log "parser error" deadEnds
-    in
-    H.text (Debug.toString deadEnds)
+    H.text "DEAD ENDS"
 
 
 viewToken : Token -> E.Element msg

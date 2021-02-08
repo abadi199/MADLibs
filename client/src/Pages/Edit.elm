@@ -16,6 +16,7 @@ type alias Model =
     , key : String
     , madlib : Result (H.Html Msg) MADLib
     , text : WebData String
+    , save : WebData ()
     }
 
 
@@ -38,6 +39,7 @@ init session key =
       , key = key
       , madlib = Result.Ok []
       , text = RemoteData.NotAsked
+      , save = RemoteData.NotAsked
       }
     , Api.load key OnLoadComplete
     )
@@ -65,7 +67,13 @@ view model =
             , E.row [ E.spacing 10 ]
                 [ Input.button []
                     { onPress = Just SaveButtonClicked
-                    , label = E.text "Save"
+                    , label =
+                        case model.save of
+                            RemoteData.Loading ->
+                                E.text "Saving..."
+
+                            _ ->
+                                E.text "Save"
                     }
                 , Input.button []
                     { onPress = Just PlayButtonClicked
@@ -107,10 +115,10 @@ update msg model =
         SaveButtonClicked ->
             case model.text of
                 RemoteData.Success text ->
-                    ( model, Api.save { key = model.key, text = text } OnSaveComplete )
+                    ( { model | save = RemoteData.Loading }, Api.save { key = model.key, text = text } OnSaveComplete )
 
                 _ ->
-                    Debug.todo "save button"
+                    ( model, Cmd.none )
 
         OnLoadComplete text ->
             ( { model
@@ -124,8 +132,8 @@ update msg model =
             , Cmd.none
             )
 
-        OnSaveComplete _ ->
-            ( model, Cmd.none )
+        OnSaveComplete save ->
+            ( { model | save = save }, Cmd.none )
 
         PlayButtonClicked ->
             ( model, Browser.Navigation.pushUrl navKey (Route.toUrl (Route.Play model.key)) )
