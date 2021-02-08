@@ -1,5 +1,7 @@
-module MADLib exposing (MADLib, Token(..), inputTokenParser, parse, textTokenParser)
+module MADLib exposing (MADLib, Token(..), inputTokenParser, parse, textTokenParser, viewToken)
 
+import Element as E
+import Element.Font as Font
 import Html as H
 import Parser exposing ((|.), (|=), getChompedString)
 
@@ -110,3 +112,16 @@ toHtml deadEnds =
             Debug.log "parser error" deadEnds
     in
     H.text (Debug.toString deadEnds)
+
+
+viewToken : Token -> E.Element msg
+viewToken token =
+    case token of
+        Text text ->
+            E.text text
+
+        Input label ->
+            E.el [ Font.bold, E.padding 10 ] (E.text label)
+
+        AnsweredInput { answer } ->
+            E.el [ Font.bold ] (E.text answer)
