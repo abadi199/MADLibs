@@ -5,6 +5,7 @@ import Browser
 import Browser.Navigation as Navigation
 import Html exposing (Html)
 import Pages.Edit as EditPage
+import Pages.Play as PlayPage
 import RemoteData exposing (WebData)
 import Route exposing (Route)
 import Session exposing (Session, navKey)
@@ -31,12 +32,13 @@ subscriptions _ =
 type Model
     = Redirect Session
     | Edit EditPage.Model
-    | Play Session { key : String, text : String }
+    | Play PlayPage.Model
 
 
 type Msg
     = GetNewKeyComplete (WebData String)
     | EditPageMsg EditPage.Msg
+    | PlayPageMsg PlayPage.Msg
     | UrlChanged Url.Url
     | UrlRequested Browser.UrlRequest
 
@@ -56,8 +58,8 @@ toSession model =
         Edit editModel ->
             EditPage.toSession editModel
 
-        Play session _ ->
-            session
+        Play playModel ->
+            PlayPage.toSession playModel
 
 
 changeRouteTo : Maybe Route -> Model -> ( Model, Cmd Msg )
@@ -81,7 +83,11 @@ changeRouteTo maybeRoute model =
             ( Edit pageModel, pageCmd |> Cmd.map EditPageMsg )
 
         Just (Route.Play key) ->
-            ( Play session { key = key, text = "" }, Cmd.none )
+            let
+                ( pageModel, pageCmd ) =
+                    PlayPage.init session key
+            in
+            ( Play pageModel, pageCmd |> Cmd.map PlayPageMsg )
 
 
 view : Model -> Browser.Document Msg
@@ -96,8 +102,9 @@ view model =
                 EditPage.view pageModel
                     |> List.map (Html.map EditPageMsg)
 
-            Play _ _ ->
-                blankView
+            Play pageModel ->
+                PlayPage.view pageModel
+                    |> List.map (Html.map PlayPageMsg)
     }
 
 
@@ -139,6 +146,16 @@ update msg model =
             ( Edit pageModel, Cmd.map EditPageMsg pageCmd )
 
         ( EditPageMsg _, _ ) ->
+            ( model, Cmd.none )
+
+        ( PlayPageMsg pageMsg, Play playPageModel ) ->
+            let
+                ( pageModel, pageCmd ) =
+                    PlayPage.update pageMsg playPageModel
+            in
+            ( Play pageModel, Cmd.map PlayPageMsg pageCmd )
+
+        ( PlayPageMsg _, _ ) ->
             ( model, Cmd.none )
 
         ( UrlChanged url, _ ) ->

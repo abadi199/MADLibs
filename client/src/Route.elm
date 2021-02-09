@@ -28,7 +28,7 @@ toUrl : Route -> String
 toUrl route =
     case route of
         New ->
-            ""
+            "/"
 
         Edit key ->
             "/edit/" ++ key

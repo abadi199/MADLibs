@@ -1,7 +1,19 @@
-module MADLib exposing (MADLib, Token(..), inputTokenParser, parse, textTokenParser, viewToken)
+module MADLib exposing
+    ( MADLib
+    , Token(..)
+    , filterByInput
+    , inputTokenParser
+    , isAnswered
+    , parse
+    , textTokenParser
+    , viewToken
+    , viewTokenForm
+    )
 
 import Element as E
+import Element.Background as Background
 import Element.Font as Font
+import Element.Input as Input
 import Html as H
 import Parser exposing ((|.), (|=), getChompedString)
 
@@ -106,7 +118,7 @@ textTokenParser =
 
 
 toHtml : List Parser.DeadEnd -> H.Html msg
-toHtml deadEnds =
+toHtml _ =
     H.text "DEAD ENDS"
 
 
@@ -114,10 +126,72 @@ viewToken : Token -> E.Element msg
 viewToken token =
     case token of
         Text text ->
-            E.text text
+            E.el [ E.paddingXY 5 0 ] (E.text text)
 
         Input label ->
-            E.el [ Font.bold, E.padding 10 ] (E.text label)
+            E.el
+                [ Font.bold
+                , E.paddingXY 5 0
+                , Background.color (E.rgba255 222 244 64 0.25)
+                ]
+                (E.text <| "[" ++ label ++ "]")
 
         AnsweredInput { answer } ->
-            E.el [ Font.bold ] (E.text answer)
+            E.el
+                [ Font.bold
+                , E.paddingXY 5 0
+                , Background.color (E.rgba255 0 254 45 0.25)
+                ]
+                (E.text answer)
+
+
+viewTokenForm : (Int -> Token -> msg) -> Int -> Token -> Maybe (E.Element msg)
+viewTokenForm onChange index token =
+    let
+        viewAnswer label answer =
+            E.el []
+                (Input.text [ E.width (E.px 300) ]
+                    { onChange = \newAnswer -> onChange index (AnsweredInput { label = label, answer = newAnswer })
+                    , text = answer
+                    , placeholder = Nothing
+                    , label = Input.labelAbove [] (E.text label)
+                    }
+                )
+    in
+    case token of
+        Input label ->
+            Just <| viewAnswer label ""
+
+        AnsweredInput { label, answer } ->
+            Just <| viewAnswer label answer
+
+        _ ->
+            Nothing
+
+
+isInput : Token -> Bool
+isInput token =
+    case token of
+        Input _ ->
+            True
+
+        _ ->
+            False
+
+
+filterByInput : MADLib -> MADLib
+filterByInput madlib =
+    madlib |> List.filter (\token -> isInput token)
+
+
+isAnswered : Token -> Bool
+isAnswered token =
+    case token of
+        AnsweredInput { answer } ->
+            String.isEmpty answer |> not
+
+        Input _ ->
+            False
+
+        _ ->
+            True

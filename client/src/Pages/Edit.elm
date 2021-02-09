@@ -2,13 +2,21 @@ module Pages.Edit exposing (Model, Msg, init, toSession, update, view)
 
 import Api
 import Browser.Navigation
+import Button
 import Element as E
+import Element.Font as Font
 import Element.Input as Input
+import Element.Region as Region
 import Html as H
 import MADLib exposing (MADLib)
 import RemoteData exposing (WebData)
 import Route
 import Session exposing (Session)
+
+
+defaultStory : String
+defaultStory =
+    "Hi [Name], start typing your story here. Use square bracket to mark an input word. Have fun, [Noun]!"
 
 
 type alias Model =
@@ -51,35 +59,38 @@ view model =
         (E.column
             [ E.width E.fill
             , E.height E.fill
-            , E.padding 20
+            , E.paddingXY 0 40
             , E.spacing 40
             , E.width (E.fill |> E.maximum 1000)
             , E.centerX
             ]
-            [ Input.multiline [ E.height E.fill, E.width E.fill ]
-                { onChange = TextUpdated
-                , text = RemoteData.withDefault "" model.text
-                , label = Input.labelAbove [] (E.text "Text")
-                , placeholder = Nothing
-                , spellcheck = True
-                }
-            , preview model.madlib
-            , E.row [ E.spacing 10 ]
-                [ Input.button []
-                    { onPress = Just SaveButtonClicked
-                    , label =
-                        case model.save of
+            [ E.el [ Region.heading 1, Font.size 30, Font.bold ] (E.text "MADLabs")
+            , E.row [ E.spacing 20, E.width E.fill ]
+                [ Input.multiline [ E.height E.fill, E.width <| E.px 500 ]
+                    { onChange = TextUpdated
+                    , text = RemoteData.withDefault "" model.text
+                    , label = Input.labelAbove [] (E.text "Text")
+                    , placeholder = Nothing
+                    , spellcheck = True
+                    }
+                , preview model.madlib
+                ]
+            , E.el [ E.width E.fill ]
+                (E.row [ E.spacing 10, E.centerX ]
+                    [ Button.button
+                        (case model.save of
                             RemoteData.Loading ->
-                                E.text "Saving..."
+                                "Saving..."
 
                             _ ->
-                                E.text "Save"
-                    }
-                , Input.button []
-                    { onPress = Just PlayButtonClicked
-                    , label = E.text "Play"
-                    }
-                ]
+                                "Save"
+                        )
+                        SaveButtonClicked
+                    , Button.button
+                        "Play"
+                        PlayButtonClicked
+                    ]
+                )
             ]
         )
     ]
@@ -121,10 +132,24 @@ update msg model =
                     ( model, Cmd.none )
 
         OnLoadComplete text ->
-            ( { model
-                | text = text
-                , madlib =
+            let
+                updatedText =
                     text
+                        |> RemoteData.map
+                            (\story ->
+                                if String.isEmpty story then
+                                    defaultStory
+
+                                else
+                                    story
+                            )
+                        |> RemoteData.withDefault defaultStory
+                        |> RemoteData.Success
+            in
+            ( { model
+                | text = updatedText
+                , madlib =
+                    updatedText
                         |> RemoteData.toMaybe
                         |> Maybe.map MADLib.parse
                         |> Maybe.withDefault (Result.Ok [])
@@ -136,4 +161,12 @@ update msg model =
             ( { model | save = save }, Cmd.none )
 
         PlayButtonClicked ->
-            ( model, Browser.Navigation.pushUrl navKey (Route.toUrl (Route.Play model.key)) )
+            ( model.text
+                |> RemoteData.toMaybe
+                |> Maybe.map (\text -> { model | session = Session.cacheStory text model.session })
+                |> Maybe.withDefault model
+            , Cmd.batch
+                [ model.text |> RemoteData.map (\text -> Api.save { key = model.key, text = text } OnSaveComplete) |> RemoteData.withDefault Cmd.none
+                , Browser.Navigation.pushUrl navKey (Route.toUrl (Route.Play model.key))
+                ]
+            )
