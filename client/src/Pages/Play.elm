@@ -1,4 +1,12 @@
-module Pages.Play exposing (Model, Msg, init, toSession, update, view)
+module Pages.Play exposing
+    ( Model
+    , Msg
+    , init
+    , toSession
+    , update
+    , updateSession
+    , view
+    )
 
 import Api
 import Browser.Navigation
@@ -37,6 +45,11 @@ toSession { session } =
     session
 
 
+updateSession : Session -> Model -> Model
+updateSession session model =
+    { model | session = session }
+
+
 init : Session -> String -> ( Model, Cmd Msg )
 init session key =
     ( { session = session
@@ -55,7 +68,7 @@ init session key =
 
 view : Model -> List (H.Html Msg)
 view model =
-    [ E.layout []
+    [ E.layout [ E.padding 20 ]
         (E.column
             [ E.width E.fill
             , E.height E.fill
@@ -104,7 +117,10 @@ viewInput madlibResult =
                 , madlib
                     |> List.indexedMap (MADLib.viewTokenForm InputUpdated)
                     |> List.filterMap identity
-                    |> E.wrappedRow [ E.spacing 20 ]
+                    |> E.wrappedRow
+                        [ E.spacing 20
+                        , E.centerX
+                        ]
                 ]
 
         Err error ->

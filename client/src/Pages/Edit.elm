@@ -1,4 +1,12 @@
-module Pages.Edit exposing (Model, Msg, init, toSession, update, view)
+module Pages.Edit exposing
+    ( Model
+    , Msg
+    , init
+    , toSession
+    , update
+    , updateSession
+    , view
+    )
 
 import Api
 import Browser.Navigation
@@ -39,6 +47,11 @@ type Msg
 toSession : Model -> Session
 toSession { session } =
     session
+
+
+updateSession : Session -> Model -> Model
+updateSession session model =
+    { model | session = session }
 
 
 init : Session -> String -> ( Model, Cmd Msg )

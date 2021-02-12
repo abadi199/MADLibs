@@ -1,3 +1,4 @@
 import { Elm } from "./Main.elm";
 
-Elm.Main.init({ node: document.querySelector("main") });
+const windowSize = { width: window.innerWidth, height: window.innerHeight };
+Elm.Main.init({ node: document.querySelector("main"), flags: windowSize });

@@ -1,20 +1,39 @@
-module Session exposing (Session, cacheStory, getCachedStory, navKey, new)
+module Session exposing
+    ( Session
+    , WindowSize
+    , cacheStory
+    , device
+    , getCachedStory
+    , navKey
+    , new
+    , resizeWindow
+    )
 
 import Browser.Navigation as Navigation
+import Element as E
 
 
 type Session
     = Session Data
 
 
-new : Navigation.Key -> Session
-new navKey_ =
-    Session { navKey = navKey_, cachedStory = Nothing }
+new : WindowSize -> Navigation.Key -> Session
+new windowSize navKey_ =
+    Session
+        { navKey = navKey_
+        , cachedStory = Nothing
+        , device = E.classifyDevice windowSize
+        }
+
+
+type alias WindowSize =
+    { height : Int, width : Int }
 
 
 type alias Data =
     { navKey : Navigation.Key
     , cachedStory : Maybe String
+    , device : E.Device
     }
 
 
@@ -31,3 +50,13 @@ cacheStory story (Session data) =
 getCachedStory : Session -> Maybe String
 getCachedStory (Session data) =
     data.cachedStory
+
+
+resizeWindow : WindowSize -> Session -> Session
+resizeWindow windowSize (Session data) =
+    Session { data | device = E.classifyDevice windowSize }
+
+
+device : Session -> E.Device
+device (Session data) =
+    data.device

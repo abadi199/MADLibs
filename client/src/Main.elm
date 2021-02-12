@@ -2,17 +2,18 @@ module Main exposing (main)
 
 import Api
 import Browser
+import Browser.Events
 import Browser.Navigation as Navigation
-import Html exposing (Html)
+import Html
 import Pages.Edit as EditPage
 import Pages.Play as PlayPage
 import RemoteData exposing (WebData)
 import Route exposing (Route)
-import Session exposing (Session, navKey)
+import Session exposing (Session, WindowSize, navKey)
 import Url
 
 
-main : Program () Model Msg
+main : Program WindowSize Model Msg
 main =
     Browser.application
         { init = init
@@ -26,7 +27,7 @@ main =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Browser.Events.onResize (\width height -> WindowSize width height |> WindowResized)
 
 
 type Model
@@ -41,12 +42,13 @@ type Msg
     | PlayPageMsg PlayPage.Msg
     | UrlChanged Url.Url
     | UrlRequested Browser.UrlRequest
+    | WindowResized WindowSize
 
 
-init : () -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
-init _ url navKey =
+init : WindowSize -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
+init windowSize url navKey =
     changeRouteTo (Route.fromUrl url)
-        (Redirect (Session.new navKey))
+        (Redirect (Session.new windowSize navKey))
 
 
 toSession : Model -> Session
@@ -168,3 +170,18 @@ update msg model =
 
                 Browser.External href ->
                     ( model, Navigation.load href )
+
+        ( WindowResized windowSize, Redirect _ ) ->
+            ( Redirect (Session.resizeWindow windowSize session), Cmd.none )
+
+        ( WindowResized windowSize, Edit pageModel ) ->
+            ( EditPage.updateSession (Session.resizeWindow windowSize session) pageModel
+                |> Edit
+            , Cmd.none
+            )
+
+        ( WindowResized windowSize, Play pageModel ) ->
+            ( PlayPage.updateSession (Session.resizeWindow windowSize session) pageModel
+                |> Play
+            , Cmd.none
+            )
